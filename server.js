@@ -120,7 +120,7 @@ server.get('/customers/:id', async (req, res) => {
 server.post('/customers', async (req, res) => {
     const { name, phone, cpf, birthday } = req.body;
     try{
-        const validated = await customerValidation(name, phone, cpf, birthday);
+        const validated = await customerValidation("post", name, phone, cpf, birthday);
         console.log(validated);
         if(validated.flag){
             await connection.query(`INSERT INTO customers (name, phone, cpf, birthday) VALUES ($1, $2, $3, $4)`, [name, phone, cpf, birthday]);
@@ -143,7 +143,7 @@ server.put('/customers/:id', async (req, res) => {
             res.sendStatus(400);
             return;
         }
-        const validated = await customerValidation(name, phone, cpf, birthday);
+        const validated = await customerValidation("put", name, phone, cpf, birthday);
         console.log(validated);
         if(validated.flag){
             await connection.query(`
@@ -161,7 +161,7 @@ server.put('/customers/:id', async (req, res) => {
     }
 });
 
-async function customerValidation(name, phone, cpf, birthday){
+async function customerValidation(type ,name, phone, cpf, birthday){
     let result = {flag: true, status:201}
     if(isNaN(parseInt(phone)) || isNaN(parseInt(cpf))){
         console.log("phone or cpf isNaN");
@@ -183,12 +183,10 @@ async function customerValidation(name, phone, cpf, birthday){
         return result;
     }
     const customers = await connection.query(`SELECT * FROM customers`);
-    if(customers.rows.length > 0){
-        console.log("entra no if");
+    if(type === "post" && customers.rows.length > 0){
         customers.rows.forEach(customer => {
             console.log(customer);
             if(customer.cpf === cpf){
-                console.log("cpf ja existe");
                 result.flag=false;
                 result.status=409;
             }
